@@ -1,0 +1,116 @@
+#include<IRremote.h>
+#include <LiquidCrystal.h>
+#include <Servo.h> 
+
+LiquidCrystal lcd(12, 10, 9, 13, 6, 7);
+int red = 4;
+int blue=0;
+int green = 8;
+int RECV_PIN = 11;
+IRrecv irrecv(RECV_PIN);
+decode_results results ;
+Servo servo1;
+Servo servo2;
+float val, voltage, temp;
+int ch;
+
+void setup()
+{
+  pinMode(red,OUTPUT);
+  pinMode(blue,OUTPUT);
+  pinMode(green,OUTPUT);
+  pinMode(3, INPUT);
+  pinMode(5, OUTPUT);
+  pinMode(A5, INPUT);
+  lcd.begin(16, 1);
+  Serial.begin(9600);
+  servo1.attach(2);
+  servo2.attach(2);
+  servo2.write(90);
+  servo1.write(90);
+  irrecv.enableIRIn();
+  Serial.print("started");
+}
+
+void loop()
+{
+  val=analogRead(A5); //Read the Analog value and save in val
+  voltage=val*0.0048828125; //val*(5/1024)
+  temp = (voltage - 0.5) * 100.0;//substract offset value
+    unsigned int value = results.value;
+    lcd.print("CHECK YOUR TEMP");
+      delay(500);
+      lcd.clear();
+  if (irrecv.decode(&results))
+  {      
+    switch (value) 
+    {
+    case 2295:// SHOP IS OPEN
+    {
+      lcd.print("     Welcome     ");
+      Serial.println("SHOP IS OPEN");
+      delay(1000);
+      
+      if(digitalRead(3)== HIGH)//THERE IS MOVEMENT
+      {
+        if(temp<=37)
+        {
+         digitalWrite(red,LOW);
+         digitalWrite(blue,LOW);
+         digitalWrite(green,HIGH);//GREEN LIGHT INDICATES SHOP IS OPEN
+         servo2.write(180);//doors open
+         servo1.write(180);//doors open
+        }
+        else if(temp>37)
+        {
+          digitalWrite(red,LOW);
+          digitalWrite(blue,LOW);
+          digitalWrite(green,HIGH);
+          lcd.clear();
+          lcd.print("TEMP IS TOO HIGH");
+          Serial.println("TEMP IS TOO HIGH");
+          servo2.write(90);//doors CLOSED
+          servo1.write(90);//doors CLOSED
+          digitalWrite(5,HIGH);//buzzer noise SHOWING INTRUDER
+          delay(500);
+          digitalWrite(5,LOW);
+          delay(1000);
+        }
+      }
+    }
+      break;
+     
+    case 18615:
+    {
+      digitalWrite(blue,HIGH);
+      digitalWrite(red,LOW);
+      digitalWrite(green,LOW);
+    }
+     
+    break;
+     
+      case 34935://SHOP IS CLOSED
+    
+      {
+        lcd.clear();
+        lcd.print(" SHOP IS CLOSED ");
+        Serial.println("SHOP IS CLOSED");
+        delay(1000);
+        if(digitalRead(3)== HIGH)//INDICATES MOVEMENT
+           {
+            digitalWrite(green,LOW);
+            digitalWrite(blue,LOW);
+            digitalWrite(red,HIGH);//RED SHOWS SHOP IS CLOSED
+            servo2.write(90);//doors CLOSE
+            servo1.write(90);//doors CLOSE
+            digitalWrite(5,HIGH);//buzzer noise SHOWING INTRUDER
+            delay(500);
+            digitalWrite(5,LOW);
+            delay(1000);
+            }
+      break;
+      }
+      
+    }     
+  }
+}
