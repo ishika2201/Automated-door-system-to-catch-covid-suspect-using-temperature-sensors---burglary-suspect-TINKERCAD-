@@ -1,0 +1,1 @@
+# Automated-door-system-to-detect-covid-suspect-using-temperature-sensors-and-burglary-suspect
